@@ -1,12 +1,15 @@
 import React from 'react';
 import {View, TouchableOpacity, Text} from 'react-native';
-import {getMetricMetaInfo, timeToString} from "../utils/helpers";
+import {getDailyReminderValue, getMetricMetaInfo, timeToString} from "../utils/helpers";
 import Stepper from "./Stepper";
 import WorkOutSlider from "./Slider";
 import DateHeader from "./DateHeader";
 import moment from "moment";
 import {Ionicons} from '@expo/vector-icons';
 import TextButton from "./TextButton";
+import {removeEntry, submitEntry} from "../utils/api";
+import {addEntry} from "../actions/index";
+import {connect} from "react-redux";
 
 function SubmitBtn ({onPress}) {
   return <TouchableOpacity
@@ -58,6 +61,10 @@ class AddEntry extends React.Component {
   onSubmit = () => {
     const key = timeToString();
     const entry = this.state;
+    this.props.dispatch(addEntry({
+      [key]: entry
+    }))
+
     this.setState({
       run: 0,
       bike: 0,
@@ -65,11 +72,15 @@ class AddEntry extends React.Component {
       sleep: 0,
       eat: 0,
     })
+    submitEntry({entry, key});
   }
 
   reset = () => {
-    const key = timeToString()
-    // console.warn("Reset button clicked!!!")
+    const key = timeToString();
+    this.props.dispatch(addEntry({
+      [key]: getDailyReminderValue()
+    }))
+    removeEntry(key);
   }
 
   render(){
@@ -111,4 +122,11 @@ class AddEntry extends React.Component {
   }
 }
 
-export default AddEntry;
+function mapStateToProps(state){
+  const key = timeToString()
+  return {
+    alreadyLogged: state[key] && typeof state[key].today === 'undefined' ? true: false
+  }
+}
+
+export default connect(mapStateToProps, {addEntry})(AddEntry);
